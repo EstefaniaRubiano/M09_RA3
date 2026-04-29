@@ -19,15 +19,14 @@ public class Servidor {
     }
 
     public void repDades() throws IOException {
-        BufferedReader br = new BufferedReader(
-            new InputStreamReader(clientSocket.getInputStream())
-        );
-
-        String linia;
-        while ((linia = br.readLine()) != null) {
-            System.out.println("Rebut: " + linia);
+        try (BufferedReader br = new BufferedReader(
+                new InputStreamReader(clientSocket.getInputStream())
+        )) {
+            String linia;
+            while ((linia = br.readLine()) != null) {
+                System.out.println("Rebut: " + linia);
+            }
         }
-        br.close();
     }
 
     public void tanca() throws IOException {

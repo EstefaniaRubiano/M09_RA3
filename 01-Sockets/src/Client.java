@@ -10,7 +10,7 @@ public class Client {
 
     public void connecta() throws IOException {
         socket = new Socket(HOST, PORT);
-        out = new PrintWriter(socket.getOutputStream());
+        out = new PrintWriter(socket.getOutputStream(), true);
         System.out.println("Connectat a servidor en " + HOST + ":" + PORT);
     }
 
