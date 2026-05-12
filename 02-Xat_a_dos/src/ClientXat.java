@@ -1,22 +1,28 @@
 import java.io.*;
 import java.net.*;
+import java.util.Scanner;
 
 public class ClientXat {
 
+    static final String HOST = "localhost";
+    static final int PORT = 9999;
+    static final String MSG_SORTIR = "sortir";
+
     private Socket socket;
-    private ObjectOutputStream out;
-    private ObjectInputStream in;
+    private ObjectOutputStream sortida;
+    private ObjectInputStream entrada;
 
     public void connecta() throws IOException {
-        socket = new Socket(ServidorXat.HOST, ServidorXat.PORT);
-        out = new ObjectOutputStream(socket.getOutputStream());
-        in = new ObjectInputStream(socket.getInputStream());
-        System.out.println("Connectat al servidor");
+        socket = new Socket(HOST, PORT);
+        System.out.println("Client connectat a " + HOST + ":" + PORT);
+        sortida = new ObjectOutputStream(socket.getOutputStream());
+        entrada = new ObjectInputStream(socket.getInputStream());
+        System.out.println("Flux d'entrada i sortida creat.");
     }
 
-    public void enviarMissatge(String msg) throws IOException {
-        out.writeObject(msg);
-        out.flush();
+    public void enviarMissatge(String missatge) throws IOException {
+        sortida.writeObject(missatge);
+        sortida.flush();
     }
 
     public void tancarClient() throws IOException {
@@ -25,16 +31,32 @@ public class ClientXat {
         }
     }
 
-    public static void main(String[] args) {
-
+    public static void main(String[] args) throws Exception {
         ClientXat client = new ClientXat();
+        client.connecta();
 
-        try {
-            client.connecta();
-            
-            client.tancarClient();
-        } catch (Exception e) {
-            e.printStackTrace();
+        // Crear i iniciar el fil lector
+        FilLectorCX filLector = new FilLectorCX(client.entrada);
+        System.out.println("Missatge ('sortir' per tancar): Fil de lectura iniciat");
+        filLector.start();
+
+        // Llegir el nom del servidor i enviarlo
+        Scanner scanner = new Scanner(System.in);
+        String linia;
+        while (scanner.hasNextLine()) {
+            linia = scanner.nextLine();
+            if (linia.equals(MSG_SORTIR)) {
+                System.out.println("Enviant missatge: " + linia);
+                client.enviarMissatge(linia);
+                break;
+            }
+            System.out.println("Enviant missatge: " + linia);
+            client.enviarMissatge(linia);
         }
+
+        scanner.close();
+        System.out.println("Tancant client...");
+        client.tancarClient();
+        System.out.println("Client tancat.");
     }
 }

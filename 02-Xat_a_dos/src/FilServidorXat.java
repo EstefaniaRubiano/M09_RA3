@@ -1,26 +1,26 @@
-
-import java.io.ObjectInputStream;
+import java.io.*;
 
 public class FilServidorXat extends Thread {
 
-    private final ObjectInputStream in;
-    private final String nom;
+    private ObjectInputStream entrada;
+    private String nom;
 
-    public FilServidorXat(ObjectInputStream in, String nom) {
-        this.in = in;
+    public FilServidorXat(ObjectInputStream entrada, String nom) {
+        this.entrada = entrada;
         this.nom = nom;
     }
 
     @Override
     public void run() {
         try {
-            String msg = "";
-            while (!msg.equals(ServidorXat.MSG_SORTIR)) {
-                msg = (String) in.readObject();
-                System.out.println(nom + ": " + msg);
+            String missatge;
+            while (!(missatge = (String) entrada.readObject()).equals(ServidorXat.MSG_SORTIR)) {
+                System.out.println("Missatge ('sortir' per tancar): Rebut: " + missatge);
+                System.out.println("Hola " + nom + "!");
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Missatge ('sortir' per tancar): Rebut: " + missatge);
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("Connexió amb el client tancada.");
         }
     }
 }

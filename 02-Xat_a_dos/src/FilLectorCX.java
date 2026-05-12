@@ -1,23 +1,24 @@
-import java.io.ObjectInputStream;
+import java.io.*;
 
 public class FilLectorCX extends Thread {
 
-    private ObjectInputStream in;
+    private ObjectInputStream entrada;
 
-    public FilLectorCX(ObjectInputStream in) {
-        this.in = in;
+    public FilLectorCX(ObjectInputStream entrada) {
+        this.entrada = entrada;
     }
 
     @Override
     public void run() {
         try {
-            String msg = "";
-            while (!msg.equals(ServidorXat.MSG_SORTIR)) {
-                msg = (String) in.readObject();
-                System.out.println("Servidor: " + msg);
+            String missatge;
+            while (!(missatge = (String) entrada.readObject()).equals(ClientXat.MSG_SORTIR)) {
+                System.out.println("Missatge ('sortir' per tancar): Rebut: " + missatge);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Missatge ('sortir' per tancar): Rebut: " + missatge);
+            System.out.println("El servidor ha tancat la connexió.");
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("El servidor ha tancat la connexió.");
         }
     }
 }

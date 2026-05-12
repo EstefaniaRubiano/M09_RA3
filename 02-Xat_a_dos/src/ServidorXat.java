@@ -1,9 +1,10 @@
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Scanner;
 
 public class ServidorXat {
     public static final int PORT = 9999;
@@ -13,7 +14,7 @@ public class ServidorXat {
 
     public void iniciarServidor() throws IOException {
         serverSocket = new ServerSocket(PORT);
-        System.out.println("Servidor iniciat...");
+        System.out.println("Servidor iniciat a " + HOST + ":" + PORT);
     }
 
     public void pararServidor() throws IOException {
@@ -22,41 +23,51 @@ public class ServidorXat {
         }
     }
 
-    public String getNom(ObjectInputStream in) throws IOException, ClassNotFoundException {
-        return (String) in.readObject();
+    public String getNom(ObjectInputStream entrada, ObjectOutputStream sortida) throws IOException, ClassNotFoundException {
+        sortida.writeObject("Escriu el teu nom:");
+        sortida.flush();
+        return (String) entrada.readObject();
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
         ServidorXat servidor = new ServidorXat();
+        servidor.iniciarServidor();
 
-        try {
-            servidor.iniciarServidor();
-            Socket clientSocket = servidor.serverSocket.accept();
+        Socket clientSocket = servidor.serverSocket.accept();
+        System.out.println("Client connectat: " + clientSocket.getInetAddress());
 
-            System.out.println("Client connectat");
-            ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
-            ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
+        ObjectOutputStream sortida = new ObjectOutputStream(clientSocket.getOutputStream());
+        ObjectInputStream entrada = new ObjectInputStream(clientSocket.getInputStream());
 
-            String nomClient = servidor.getNom(in);
-            System.out.println("Nom client: " + nomClient);
-            FilServidorXat fil = new FilServidorXat(in, nomClient);
-            fil.start();
-            Scanner scanner = new Scanner(System.in);
+        String nom = servidor.getNom(entrada, sortida);
+        System.out.println("Nom rebut: " + nom);
 
-            String msg = "";
-            while (!msg.equals(MSG_SORTIR)) {
-                msg = scanner.nextLine();
-                out.writeObject(msg);
-                out.flush();
-            }
+        // Crear i iniciar el fil del servidor
+        FilServidorXat fil = new FilServidorXat(entrada, nom);
+        System.out.println("Fil de xat creat.");
+        fil.start();
+        System.out.println("Fil de " + nom + " iniciat");
 
-            fil.join();
-            clientSocket.close();
-            servidor.pararServidor();
-
-        } catch (Exception e) {
-            e.printStackTrace();
+        // Enviar missatges desde la consola
+        BufferedReader consola = new BufferedReader(new InputStreamReader(System.in));
+        String missatge;
+        while (!(missatge = consola.readLine()).equals(MSG_SORTIR)) {
+            System.out.println("Missatge ('sortir' per tancar): " + missatge);
+            sortida.writeObject(missatge);
+            sortida.flush();
         }
+        System.out.println("Missatge ('sortir' per tancar): " + missatge);
+        sortida.writeObject(MSG_SORTIR);
+        sortida.flush();
+
+        // Esperar que el fil acabi
+        fil.join();
+        System.out.println("Fil de xat finalitzat.");
+        System.out.println(missatge);
+
+        clientSocket.close();
+        servidor.pararServidor();
+        System.out.println("Servidor aturat.");
     }
 }
